@@ -1,0 +1,19 @@
+{
+  "name": "llm-lab",
+  "private": true,
+  "version": "0.0.0",
+  "description": "AI experiments monorepo — LangChain, RAG, Milvus, MCP, Tools",
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm -r --parallel run build",
+    "test": "pnpm -r run test",
+    "clean": "pnpm -r exec rm -rf node_modules && rm -rf node_modules"
+  },
+  "dependencies": {
+    "@langchain/core": "catalog:",
+    "@langchain/openai": "catalog:",
+    "chalk": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  }
+}

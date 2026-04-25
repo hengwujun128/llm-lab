@@ -1,0 +1,22 @@
+{
+  "name": "rag-test",
+  "version": "1.0.0",
+  "description": "网页文档加载 + 文本切分 RAG 实验",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["rag", "langchain", "text-splitter", "cheerio"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/classic": "catalog:",
+    "@langchain/community": "catalog:",
+    "@langchain/core": "catalog:",
+    "@langchain/openai": "catalog:",
+    "@langchain/textsplitters": "catalog:",
+    "cheerio": "catalog:",
+    "dotenv": "catalog:"
+  }
+}

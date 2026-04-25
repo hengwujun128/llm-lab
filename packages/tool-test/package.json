@@ -1,0 +1,22 @@
+{
+  "name": "tool-test",
+  "version": "1.0.0",
+  "description": "LangChain 工具调用 + MCP 服务端/客户端 + Agent 实验",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["langchain", "mcp", "agent", "tools"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/core": "catalog:",
+    "@langchain/mcp-adapters": "catalog:",
+    "@langchain/openai": "catalog:",
+    "@modelcontextprotocol/sdk": "catalog:",
+    "chalk": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  }
+}

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RecursiveCharacterTextSplitter 分割逻辑图解</title>
+<style>
+  :root {
+    --bg: #1a1a2e;
+    --bg-card: #16213e;
+    --bg-elevated: #1e2a4a;
+    --text: #e4e4e4;
+    --text-sec: #a0a0b8;
+    --text-dim: #6a6a80;
+    --accent: #599CE7;
+    --green: #3FA266;
+    --red: #e05565;
+    --orange: #e8a040;
+    --stroke: #e4e4e424;
+    --radius: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px;
+    max-width: 860px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  h1 { font-size: 24px; margin-bottom: 4px; }
+  h2 { font-size: 18px; margin: 28px 0 12px; color: var(--accent); }
+  h3 { font-size: 15px; margin: 20px 0 8px; }
+  .subtitle { color: var(--text-sec); font-size: 14px; margin-bottom: 20px; }
+  .divider { height: 1px; background: var(--stroke); margin: 24px 0; }
+
+  /* Flow chart */
+  .flow-svg { display: block; margin: 0 auto; }
+
+  /* Step navigator */
+  .step-nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .step-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1.5px solid var(--stroke);
+    background: transparent; color: var(--text-sec);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .step-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .step-btn.active {
+    background: var(--accent); color: #191c22;
+    border-color: var(--accent);
+  }
+
+  .step-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .step-desc { font-size: 13px; color: var(--text-sec); margin-bottom: 12px; }
+
+  .block-list { display: flex; flex-direction: column; gap: 6px; }
+  .block {
+    display: flex; align-items: center; gap: 10px;
+    border-radius: 6px; padding: 10px 14px;
+    border: 1px solid var(--stroke);
+    font-size: 13px;
+    transition: all 0.3s;
+  }
+  .block .label { color: var(--text); flex: 1; }
+  .block .size { color: var(--text-sec); font-size: 11px; white-space: nowrap; }
+
+  .block.green { background: rgba(63,162,102,0.18); }
+  .block.red { background: rgba(224,85,101,0.18); }
+  .block.blue { background: rgba(89,156,231,0.15); }
+  .block.neutral { background: rgba(228,228,228,0.08); }
+
+  /* Merge detail */
+  .merge-row {
+    display: flex; gap: 12px; align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--stroke);
+    font-size: 13px;
+  }
+  .merge-row:last-child { border-bottom: none; }
+  .merge-key { color: var(--accent); font-weight: 600; min-width: 180px; }
+  .merge-val { color: var(--text-sec); }
+
+  .overlap-svg { display: block; margin: 8px auto; }
+
+  .callout {
+    border-left: 3px solid var(--orange);
+    background: rgba(232,160,64,0.08);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 12px 16px;
+    margin-top: 16px;
+  }
+  .callout-title { color: var(--orange); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .callout-body { color: var(--text-sec); font-size: 13px; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .step-content { min-height: 200px; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<h1>RecursiveCharacterTextSplitter 分割逻辑</h1>
+<div class="subtitle">
+  配置: separators = ['。', '！', '？'] &nbsp;/&nbsp; chunkSize = 500 &nbsp;/&nbsp; chunkOverlap = 50
+</div>
+
+<div class="divider"></div>
+
+<!-- ==================== FLOW CHART ==================== -->
+<h2>算法流程图</h2>
+<p style="font-size:13px;color:var(--text-sec);margin-bottom:12px;">
+  核心是递归 — 当片段超过 chunkSize，用下一个分隔符继续切割
+</p>
+
+<svg class="flow-svg" width="520" height="520" viewBox="0 0 520 520">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#6a6a80" stroke-width="1.5"/>
+    </marker>
+    <marker id="arr-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#e05565" stroke-width="1.5"/>
+    </marker>
+  </defs>
+
+  <!-- Edges (straight) -->
+  <line x1="260" y1="42" x2="260" y2="68" stroke="#6a6a80" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="260" y1="112" x2="260" y2="138" stroke="#6a6a80" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="260" y1="182" x2="260" y2="208" stroke="#6a6a80" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Branch left (good) -->
+  <polyline points="220,252 155,268 155,278" fill="none" stroke="#3FA266" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Branch right (recurse) -->
+  <polyline points="300,252 365,268 365,278" fill="none" stroke="#e05565" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Good → merge -->
+  <line x1="155" y1="322" x2="155" y2="368" stroke="#6a6a80" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Merge → output -->
+  <line x1="260" y1="412" x2="260" y2="448" stroke="#6a6a80" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Recurse back-edge (curved) -->
+  <path d="M465,300 C530,300 430,90 360,90" fill="none" stroke="#e05565" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arr-red)"/>
+  <text x="500" y="195" fill="#e05565" font-size="11" text-anchor="middle">下一个</text>
+  <text x="500" y="208" fill="#e05565" font-size="11" text-anchor="middle">分隔符</text>
+
+  <!-- Branch labels -->
+  <text x="170" y="268" fill="#3FA266" font-size="11" text-anchor="middle">&lt; chunkSize</text>
+  <text x="350" y="268" fill="#e05565" font-size="11" text-anchor="middle">&gt;= chunkSize</text>
+
+  <!-- Nodes -->
+  <!-- start -->
+  <rect x="160" y="18" width="200" height="44" rx="8" fill="#1e2a4a" stroke="#599CE7" stroke-width="2"/>
+  <text x="260" y="44" fill="#599CE7" font-size="13" font-weight="600" text-anchor="middle">_splitText(text, seps)</text>
+
+  <!-- pick sep -->
+  <rect x="160" y="68" width="200" height="44" rx="8" fill="#1e2a4a" stroke="#e4e4e433" stroke-width="1.2"/>
+  <text x="260" y="94" fill="#e4e4e4" font-size="13" text-anchor="middle">选第一个存在的分隔符</text>
+
+  <!-- split -->
+  <rect x="160" y="138" width="200" height="44" rx="8" fill="#1e2a4a" stroke="#e4e4e433" stroke-width="1.2"/>
+  <text x="260" y="164" fill="#e4e4e4" font-size="13" text-anchor="middle">用该分隔符切割文本</text>
+
+  <!-- check -->
+  <rect x="160" y="208" width="200" height="44" rx="22" fill="#1e2a4a" stroke="#e4e4e433" stroke-width="1.2"/>
+  <text x="260" y="234" fill="#e4e4e4" font-size="13" text-anchor="middle">检查每个片段长度</text>
+
+  <!-- good -->
+  <rect x="55" y="278" width="200" height="44" rx="8" fill="#1e2a4a" stroke="#3FA266" stroke-width="1.5"/>
+  <text x="155" y="304" fill="#3FA266" font-size="13" text-anchor="middle">放入 goodSplits</text>
+
+  <!-- recurse -->
+  <rect x="265" y="278" width="200" height="44" rx="8" fill="#1e2a4a" stroke="#e05565" stroke-width="1.5"/>
+  <text x="365" y="304" fill="#e05565" font-size="13" text-anchor="middle">递归 _splitText</text>
+
+  <!-- merge -->
+  <rect x="55" y="368" width="410" height="44" rx="8" fill="#1e2a4a" stroke="#e4e4e433" stroke-width="1.2"/>
+  <text x="260" y="394" fill="#e4e4e4" font-size="13" text-anchor="middle">mergeSplits: 合并小片段 → 接近 chunkSize，保留 overlap</text>
+
+  <!-- output -->
+  <rect x="160" y="448" width="200" height="44" rx="8" fill="#1e2a4a" stroke="#599CE7" stroke-width="2"/>
+  <text x="260" y="474" fill="#599CE7" font-size="13" font-weight="600" text-anchor="middle">输出 finalChunks</text>
+</svg>
+
+<div class="divider"></div>
+
+<!-- ==================== STEP BY STEP ==================== -->
+<h2>分步示例（点击数字切换）</h2>
+
+<div class="card">
+  <div class="step-nav" id="step-nav"></div>
+  <div id="step-container" class="step-content"></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ==================== MERGE DETAIL ==================== -->
+<h2>mergeSplits 合并逻辑</h2>
+
+<div class="merge-row"><span class="merge-key">遍历 splits</span><span class="merge-val">对每个 split 计算 total + len + 分隔符长度</span></div>
+<div class="merge-row"><span class="merge-key">total + len &gt; chunkSize?</span><span class="merge-val">是 → 输出当前 chunk，保留 overlap 部分</span></div>
+<div class="merge-row"><span class="merge-key">保留 overlap</span><span class="merge-val">从头部移除 splits 直到 total &lt;= chunkOverlap</span></div>
+<div class="merge-row"><span class="merge-key">继续添加</span><span class="merge-val">把当前 split 加入 currentDoc，total += len</span></div>
+<div class="merge-row"><span class="merge-key">最后一批</span><span class="merge-val">循环结束后，剩余 currentDoc 合并为最后一个 chunk</span></div>
+
+<h3>Chunk 重叠示意</h3>
+<svg class="overlap-svg" width="460" height="90" viewBox="0 0 460 90">
+  <rect x="10" y="12" width="270" height="28" rx="5" fill="rgba(89,156,231,0.25)" stroke="#599CE7" stroke-width="1"/>
+  <text x="145" y="30" fill="#e4e4e4" font-size="13" text-anchor="middle">Chunk 1</text>
+  <rect x="220" y="12" width="60" height="62" rx="0" fill="rgba(63,162,102,0.18)" stroke="none"/>
+  <text x="250" y="82" fill="#3FA266" font-size="11" text-anchor="middle">overlap (50字)</text>
+  <rect x="220" y="46" width="220" height="28" rx="5" fill="rgba(89,156,231,0.25)" stroke="#599CE7" stroke-width="1"/>
+  <text x="330" y="64" fill="#e4e4e4" font-size="13" text-anchor="middle">Chunk 2</text>
+</svg>
+
+<div class="divider"></div>
+
+<div class="callout">
+  <div class="callout-title">注意</div>
+  <div class="callout-body">
+    当前 separators 只有 ['。', '！', '？']。如果文本中不含这些标点，将无法继续细分。
+    建议添加 '，'、' '、'' 作为兜底，其中 '' 会按单字符拆分，确保不超过 chunkSize。
+  </div>
+</div>
+
+<script>
+const steps = [
+  {
+    title: '原始文本',
+    desc: '假设加载了一篇约 1200 字的文章，作为 splitText 的输入',
+    blocks: [
+      { text: '句子A(120)。句子B(80)。句子C(600，内含！)。句子D(150)。句子E(90)。句子F(160)。', cls: 'neutral', size: '原文 ~1200字' }
+    ]
+  },
+  {
+    title: '第一步：用「。」分割',
+    desc: '遍历 separators，找到第一个在文本中存在的 → "。"，用它切割全文',
+    blocks: [
+      { text: '句子A', cls: 'green', size: '120字 ✓' },
+      { text: '句子B', cls: 'green', size: '80字 ✓' },
+      { text: '句子C', cls: 'red', size: '600字 > 500 ✗' },
+      { text: '句子D', cls: 'green', size: '150字 ✓' },
+      { text: '句子E', cls: 'green', size: '90字 ✓' },
+      { text: '句子F', cls: 'green', size: '160字 ✓' }
+    ]
+  },
+  {
+    title: '第二步：for 循环 — 处理 A、B',
+    desc: '源码 189 行：for (const s of splits) 开始遍历\nA、B 长度都 < 500，走 if 分支，放入 goodSplits 积累',
+    blocks: [
+      { text: 's = A (120) → 120 < 500 → goodSplits.push(A)', cls: 'green', size: 'goodSplits: [A]' },
+      { text: 's = B (80) → 80 < 500 → goodSplits.push(B)', cls: 'green', size: 'goodSplits: [A, B]' },
+    ]
+  },
+  {
+    title: '第三步：for 循环 — 遇到 C，触发 else 分支',
+    desc: '源码 190 行：C 长度 600 >= 500，走 else 分支\n源码 191-194：❶ goodSplits 非空 → mergeSplits([A,B]) 输出，清空 goodSplits\n源码 197-199：❷ newSeparators 存在 → await _splitText(C, ["！","？"])\n⚠️ 这里是 await，会阻塞等待递归完成后，for 循环才继续下一轮',
+    blocks: [
+      { text: 's = C (600) → 600 >= 500 → 进入 else', cls: 'red', size: '触发 else' },
+      { text: '❶ goodSplits=[A,B] 非空 → mergeSplits([A,B]) → finalChunks', cls: 'blue', size: 'finalChunks: [chunk(A,B)]' },
+      { text: '　 goodSplits = []（清空）', cls: 'neutral', size: '重置' },
+      { text: '❷ await _splitText(C, ["！","？"]) → 阻塞，进入递归...', cls: 'red', size: '→ 见第四步' },
+    ]
+  },
+  {
+    title: '第四步：递归内部 — _splitText(C, ["！","？"])',
+    desc: '新的 _splitText 调用，拥有自己独立的 finalChunks 和 goodSplits\n选中分隔符「！」→ 切割 C → 遍历 → 全部 < 500 → goodSplits\n循环结束 → mergeSplits → return 结果给上层',
+    blocks: [
+      { text: '选分隔符：text.includes("！") → separator = "！"', cls: 'neutral', size: 'newSeparators: ["？"]' },
+      { text: 'splitOnSeparator(C, "！") → [C1, C2, C3]', cls: 'neutral', size: '切割为 3 段' },
+      { text: 's = C1 (200) < 500 → goodSplits.push(C1)', cls: 'green', size: 'goodSplits: [C1]' },
+      { text: 's = C2 (180) < 500 → goodSplits.push(C2)', cls: 'green', size: 'goodSplits: [C1, C2]' },
+      { text: 's = C3 (220) < 500 → goodSplits.push(C3)', cls: 'green', size: 'goodSplits: [C1, C2, C3]' },
+      { text: '循环结束 → mergeSplits([C1,C2,C3])', cls: 'blue', size: '合并输出' },
+      { text: 'return finalChunks → 结果回到上层 finalChunks', cls: 'blue', size: '递归返回' },
+    ]
+  },
+  {
+    title: '第五步：递归返回，for 循环继续 — 处理 D、E、F',
+    desc: '第四步 await 完成，上层 finalChunks 已有 [chunk(A,B), chunk(C1,C2), chunk(C3)]\nfor 循环继续下一轮，处理 D、E、F，全部 < 500 → goodSplits',
+    blocks: [
+      { text: '← await _splitText(C) 返回，for 循环继续', cls: 'neutral', size: 'finalChunks 已有 3 个 chunk' },
+      { text: 's = D (150) → 150 < 500 → goodSplits.push(D)', cls: 'green', size: 'goodSplits: [D]' },
+      { text: 's = E (90) → 90 < 500 → goodSplits.push(E)', cls: 'green', size: 'goodSplits: [D, E]' },
+      { text: 's = F (160) → 160 < 500 → goodSplits.push(F)', cls: 'green', size: 'goodSplits: [D, E, F]' },
+    ]
+  },
+  {
+    title: '第六步：for 循环结束，处理剩余 goodSplits',
+    desc: '源码 202-204 行：循环结束后 goodSplits 还有 [D, E, F]\nif (goodSplits.length) → mergeSplits(goodSplits) → finalChunks',
+    blocks: [
+      { text: 'for 循环结束，goodSplits = [D, E, F] 非空', cls: 'green', size: '还有剩余' },
+      { text: 'mergeSplits([D, E, F]) → finalChunks', cls: 'blue', size: '最后一批输出' },
+    ]
+  },
+  {
+    title: '第七步：最终 finalChunks 结果',
+    desc: 'finalChunks 按 push 顺序排列 — 就是最终返回的所有 chunks',
+    blocks: [
+      { text: 'Chunk 1 = A + B', cls: 'blue', size: '~200字 (第三步 else ❶ mergeSplits)' },
+      { text: 'Chunk 2 = C1 + C2', cls: 'blue', size: '~380字 (第四步递归返回)' },
+      { text: 'Chunk 3 = C3', cls: 'blue', size: '~220字 (第四步递归返回)' },
+      { text: 'Chunk 4 = D + E + F', cls: 'blue', size: '~400字 (第六步剩余 goodSplits)' },
+    ]
+  }
+];
+
+const nav = document.getElementById('step-nav');
+const container = document.getElementById('step-container');
+let current = 0;
+
+function render(idx) {
+  current = idx;
+  document.querySelectorAll('.step-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+  });
+
+  const s = steps[idx];
+  let html = `<div class="step-title">${s.title}</div>`;
+  html += `<div class="step-desc">${s.desc.replace(/\n/g, '<br>')}</div>`;
+  html += '<div class="block-list">';
+  s.blocks.forEach(b => {
+    html += `<div class="block ${b.cls}"><span class="label">${b.text}</span><span class="size">${b.size}</span></div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+steps.forEach((_, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'step-btn';
+  btn.textContent = i;
+  btn.onclick = () => render(i);
+  nav.appendChild(btn);
+});
+
+render(0);
+</script>
+</body>
+</html>

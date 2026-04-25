@@ -1,0 +1,23 @@
+{
+  "name": "milvus-test",
+  "version": "1.0.0",
+  "description": "Milvus 向量数据库 + LangChain RAG 实验",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["milvus", "rag", "langchain", "vector-db"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langchain/community": "catalog:",
+    "@langchain/core": "catalog:",
+    "@langchain/openai": "catalog:",
+    "@langchain/textsplitters": "catalog:",
+    "@zilliz/milvus2-sdk-node": "catalog:",
+    "dotenv": "catalog:",
+    "epub2": "catalog:",
+    "html-to-text": "catalog:"
+  }
+}
