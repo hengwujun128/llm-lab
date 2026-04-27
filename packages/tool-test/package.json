@@ -5,9 +5,16 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "echo \"No tests yet\" && exit 0",
+    "format": "prettier . --write --config ../../.prettierrc --ignore-path ../../.prettierignore",
+    "format:check": "prettier . --check --config ../../.prettierrc --ignore-path ../../.prettierignore"
   },
-  "keywords": ["langchain", "mcp", "agent", "tools"],
+  "keywords": [
+    "langchain",
+    "mcp",
+    "agent",
+    "tools"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

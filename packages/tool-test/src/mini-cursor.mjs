@@ -48,8 +48,9 @@ async function runAgentWithTools(query, maxIterations = 30) {
     console.log(chalk.bgGreen('⏳ 正在等待 AI 思考...'))
 
     const response = await modelWithTools.invoke(messages)
-    messages.push(response) // 检查是否有工具调用
-
+    messages.push(response) 
+    
+    // 检查是否有工具调用
     // 如果没用工具调用, 则返回结果
     if (!response.tool_calls || response.tool_calls.length === 0) {
       console.log(`\n✨ AI 最终回复:\n${response.content}\n`)

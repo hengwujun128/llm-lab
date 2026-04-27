@@ -5,9 +5,16 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"No tests yet\" && exit 0"
+    "test": "echo \"No tests yet\" && exit 0",
+    "format": "prettier . --write --config ../../.prettierrc --ignore-path ../../.prettierignore",
+    "format:check": "prettier . --check --config ../../.prettierrc --ignore-path ../../.prettierignore"
   },
-  "keywords": ["milvus", "rag", "langchain", "vector-db"],
+  "keywords": [
+    "milvus",
+    "rag",
+    "langchain",
+    "vector-db"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
