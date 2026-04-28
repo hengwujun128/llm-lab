@@ -19,7 +19,6 @@
   "license": "ISC",
   "dependencies": {
     "@langchain/community": "catalog:",
-    "@langchain/core": "catalog:",
     "@langchain/openai": "catalog:",
     "@langchain/textsplitters": "catalog:",
     "@zilliz/milvus2-sdk-node": "catalog:",
