@@ -2,7 +2,7 @@
  * @Author: 张泽全 hengwujun128@gmail.com
  * @Date: 2026-04-27 22:17:42
  * @LastEditors: 张泽全 hengwujun128@gmail.com
- * @LastEditTime: 2026-04-27 22:31:33
+ * @LastEditTime: 2026-04-27 22:43:54
  * @Description:
  * @FilePath: /llm-lab/packages/memory-test/src/history-test.mjs
  */
@@ -32,8 +32,9 @@ async function inMemoryDemo() {
   const response1 = await model.invoke(messages1)
   await history.addMessage(response1)
   console.log(`用户: ${userMessage1.content}`)
-  console.log(`助手: ${response1.content}\n`) // 第二轮对话（基于历史记录）
+  console.log(`助手: ${response1.content}\n`)
 
+  // 第二轮对话（基于历史记录）
   console.log('[第二轮对话 - 基于历史记录]')
   const userMessage2 = new HumanMessage('好吃吗？')
   await history.addMessage(userMessage2)
