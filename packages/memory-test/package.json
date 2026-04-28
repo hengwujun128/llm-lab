@@ -17,6 +17,7 @@
     "@langchain/core": "catalog:",
     "@langchain/openai": "catalog:",
     "@zilliz/milvus2-sdk-node": "catalog:",
+    "dotenv": "catalog:",
     "js-tiktoken": "^1.0.21"
   }
 }
