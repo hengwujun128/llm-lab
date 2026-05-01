@@ -11,5 +11,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.12.1",
+  "dependencies": {
+    "@langchain/core": "catalog:",
+    "@langchain/openai": "catalog:",
+    "chalk": "catalog:",
+    "dotenv": "catalog:",
+    "mysql2": "catalog:",
+    "zod": "catalog:"
+  }
 }

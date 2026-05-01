@@ -13,5 +13,13 @@
   },
   "devDependencies": {
     "prettier": "^3.8.3"
+  },
+  "dependencies": {
+    "@langchain/core": "catalog:",
+    "@langchain/openai": "catalog:",
+    "chalk": "catalog:",
+    "dotenv": "catalog:",
+    "mysql2": "^3.22.3",
+    "zod": "catalog:"
   }
 }
