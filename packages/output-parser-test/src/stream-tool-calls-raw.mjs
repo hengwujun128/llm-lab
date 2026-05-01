@@ -2,7 +2,7 @@
  * @Author: 张泽全 hengwujun128@gmail.com
  * @Date: 2026-04-29 16:35:58
  * @LastEditors: 张泽全 hengwujun128@gmail.com
- * @LastEditTime: 2026-04-29 16:38:18
+ * @LastEditTime: 2026-05-01 22:57:15
  * @Description:
  * @FilePath: /llm-lab/packages/output-parser-test/src/stream-tool-calls-raw.mjs
  */
@@ -51,9 +51,12 @@ try {
 
   for await (const chunk of stream) {
     chunkIndex++
+    console.log('--------------------------------')
+    console.log(chunk)
+    console.log('--------------------------------')
     // 直接打印每个 chunk 的 tool_calls 信息
     if (chunk.tool_call_chunks && chunk.tool_call_chunks.length > 0) {
-      process.stdout.write(chunk.tool_call_chunks[0].args)
+      // process.stdout.write(chunk.tool_call_chunks[0].args)
     }
   }
 

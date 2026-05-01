@@ -18,6 +18,7 @@
     "chalk": "catalog:",
     "dotenv": "catalog:",
     "mysql2": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zod-to-json-schema": "catalog:"
   }
 }
