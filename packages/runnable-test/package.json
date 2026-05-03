@@ -1,0 +1,19 @@
+{
+  "name": "runnable-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@langchain/core": "catalog:",
+    "@langchain/openai": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  }
+}
